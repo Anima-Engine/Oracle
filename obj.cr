@@ -9,7 +9,10 @@ class OBJ
     positions = [] of { Float32, Float32, Float32 }
     coordinates = [] of { Float32, Float32 }
     faces = [] of { { Int32, Int32 }, { Int32, Int32 }, { Int32, Int32 } }
-    material = nil
+
+    objects = {} of String => Array(Array(Vertex))
+    materials = {} of String => Material
+    name = nil
 
     @file.each_line do |line|
       if line =~ /^mtllib\s/
@@ -24,8 +27,27 @@ class OBJ
         normal_map = nil
 
         File.each_line "#{path}/#{filename}" do |line|
+          if line =~ /^newmtl\s/
+            if name != nil
+              if ambient == nil
+                raise "Ambient data missing in #{filename}. (Ka)"
+              elsif diffuse == nil
+                raise "Diffuse data missing in #{filename}. (Kd)"
+              elsif specular == nil
+                raise "Specular data missing in #{filename}. (Ks)"
+              elsif shininess == nil
+                raise "Shininess data missing in #{filename}. (Ns)"
+              elsif texture == nil
+                raise "Texture path missing in #{filename}. (map_Kd)"
+              elsif normal_map == nil
+                raise "Normal map path missing in #{filename}. (map_Bump)"
+              else
+                materials[name as String] = Material.new ambient, diffuse, specular, shininess, texture, normal_map
+              end
+            end
 
-          if line =~ /^Ka\s/
+            name = line.split.last
+          elsif line =~ /^Ka\s/
             tokens = line.split
 
             ambient = Color.new tokens[-3].to_f32, tokens[-2].to_f32, tokens[-1].to_f32
@@ -59,8 +81,30 @@ class OBJ
         elsif normal_map == nil
           raise "Normal map path missing in #{filename}. (map_Bump)"
         else
-          material = Material.new ambient, diffuse, specular, shininess, texture, normal_map
+          materials[name as String] = Material.new ambient, diffuse, specular, shininess, texture, normal_map
+
+          name = nil
         end
+      elsif line =~ /^usemtl\s/
+        if name != nil
+          triangles = faces.map do |face|
+            (0..2).map do |i|
+              Vertex.new(
+                positions[face[i][0] - 1][0],
+                positions[face[i][0] - 1][1],
+                positions[face[i][0] - 1][2],
+                coordinates[face[i][1] - 1][0],
+                coordinates[face[i][1] - 1][1],
+              )
+            end
+          end
+
+          objects[name as String] = triangles
+
+          faces.clear
+        end
+
+        name = line.split.last
       elsif line =~ /^v\s/
         tokens = line.split
 
@@ -103,6 +147,8 @@ class OBJ
       end
     end
 
-    yield triangles, material
+    objects[name as String] = triangles
+
+    yield objects.keys.map { |key| [objects[key], materials[key]] }
   end
 end
