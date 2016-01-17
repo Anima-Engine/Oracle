@@ -14,7 +14,8 @@ begin
       else
         source, destination = args
 
-        Converter.new source, destination
+        converter = Converter.new source, destination
+        converter.convert
       end
     end
   end

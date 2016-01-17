@@ -1,5 +1,8 @@
 require "./vertex"
-require "./material"
+require "./blocks/material"
+require "./blocks/texture"
+require "./blocks/normal_map"
+require "./color"
 
 class OBJ
   def initialize(@file)
@@ -42,7 +45,14 @@ class OBJ
               elsif normal_map == nil
                 raise "Normal map path missing in #{filename}. (map_Bump)"
               else
-                materials[name as String] = Material.new ambient, diffuse, specular, shininess, texture, normal_map
+                materials[name as String] = Material.new(
+                  ambient as Color,
+                  diffuse as Color,
+                  specular as Color,
+                  shininess as Float32,
+                  texture as Texture,
+                  normal_map as NormalMap
+                )
               end
             end
 
@@ -62,9 +72,9 @@ class OBJ
           elsif line =~ /^Ns\s/
             shininess = line.split.last.to_f32
           elsif line =~ /^map_Kd\s/
-            texture = line.split.last
+            texture = Texture.new line.split.last
           elsif line =~ /^map_Bump\s/
-            normal_map = line.split.last
+            normal_map = NormalMap.new line.split.last
           end
         end
 
@@ -81,7 +91,14 @@ class OBJ
         elsif normal_map == nil
           raise "Normal map path missing in #{filename}. (map_Bump)"
         else
-          materials[name as String] = Material.new ambient, diffuse, specular, shininess, texture, normal_map
+          materials[name as String] = Material.new(
+            ambient as Color,
+            diffuse as Color,
+            specular as Color,
+            shininess as Float32,
+            texture as Texture,
+            normal_map as NormalMap
+          )
 
           name = nil
         end
@@ -149,6 +166,6 @@ class OBJ
 
     objects[name as String] = triangles
 
-    yield objects.keys.map { |key| [objects[key], materials[key]] }
+    objects.keys.map { |key| { objects[key], materials[key] } }
   end
 end
