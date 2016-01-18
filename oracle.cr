@@ -19,6 +19,6 @@ begin
       end
     end
   end
-rescue ex: OptionParser::InvalidOption
+rescue ex
   puts ex
 end
