@@ -11,7 +11,7 @@ class Texture < Block
     TYPE.to_io io, IO::ByteFormat::NetworkEndian
     @id.to_io io, IO::ByteFormat::NetworkEndian
 
+    @path.bytesize.to_io io, IO::ByteFormat::NetworkEndian
     @path.to_s io
-    '\0'.to_s io
   end
 end
