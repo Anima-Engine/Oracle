@@ -1,7 +1,6 @@
 require "./vertex"
 require "./blocks/material"
 require "./blocks/texture"
-require "./blocks/normal_map"
 require "./color"
 
 class OBJ
@@ -26,6 +25,7 @@ class OBJ
         diffuse = nil
         specular = nil
         shininess = nil
+        textures = {} of String => Texture
         texture = nil
         normal_map = nil
 
@@ -51,7 +51,7 @@ class OBJ
                   specular as Color,
                   shininess as Float32,
                   texture as Texture,
-                  normal_map as NormalMap
+                  normal_map as Texture
                 )
               end
             end
@@ -72,9 +72,21 @@ class OBJ
           elsif line =~ /^Ns\s/
             shininess = line.split.last.to_f32
           elsif line =~ /^map_Kd\s/
-            texture = Texture.new line.split.last
+            path = line.split.last
+
+            if textures.has_key? path
+              texture = textures[path]
+            else
+              texture = Texture.new path
+            end
           elsif line =~ /^map_Bump\s/
-            normal_map = NormalMap.new line.split.last
+            path = line.split.last
+
+            if textures.has_key? path
+              normal_map = textures[path]
+            else
+              normal_map = Texture.new path
+            end
           end
         end
 
@@ -97,7 +109,7 @@ class OBJ
             specular as Color,
             shininess as Float32,
             texture as Texture,
-            normal_map as NormalMap
+            normal_map as Texture
           )
 
           name = nil
